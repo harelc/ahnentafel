@@ -139,7 +139,7 @@ footer{border-top:3px double var(--ink);padding:24px 6vw;font-size:13px;color:va
     <div class="two" style="margin-top:22px">
       <div class="panel"><h2>Inbreeding coefficient \(F_g\)</h2><p class="small"><b>Plain language:</b> pick one spot in a child's DNA. They got one copy from their mother, one from their father. \(F_g\) is the probability those two copies are actually copies of the <i>same</i> ancestral DNA — because the parents share ancestors (Identity by Descent, IBD). Equivalently, it's roughly the expected share of the child's genome sitting in runs of homozygosity (ROH). It is <i>not</i> a percentage of shared ancestors, and not the collapse percentage. The subscript \(g\): how much of this has accumulated after \(g\) generations of mating inside this population — deeper \(g\), smaller \(N_e(g)\), and more cousin unions all push it up, via \(\Delta F \approx 1/(2N_e)\) per generation (Wright's inbreeding coefficient).</p><div id="chartF"></div><div id="fReadout" class="callout"></div></div>
 
-      <div class="panel"><h2>A concrete pedigree, with collapse</h2><p class="small">A simulated 7-generation pedigree. Each <b>colour = one real person</b>; the same colour in several boxes = pedigree collapse made visible. The pool here is deliberately shrunk to a toy \(N_{\text{toy}}\) so duplicates are visible at this depth — in reality collapse at \(g\le7\) is modest unless \(N_e\) is small or unions are consanguineous.</p><div id="chartTree"></div><div id="treeReadout" class="callout"></div></div>
+      <div class="panel"><h2>A concrete pedigree, with collapse</h2><p class="small">A simulated 7-generation pedigree. Within any one row (one generation), each <b>colour + number = one real person</b>; the same colour twice <i>in that row</i> = pedigree collapse made visible. A person lives in exactly one generation here, so the proband at the top (\(g=0\)) is always exactly one slot, and nobody can be their own grandparent. (In reality, variable parental ages allow a person to occasionally appear at two depths — the discrete-generation model excludes that.) The pool is deliberately shrunk to a toy \(N_{\text{toy}}\) so duplicates are visible at this depth.</p><div id="chartTree"></div><div id="treeReadout" class="callout"></div></div>
     </div>
 
     <div class="panel" style="margin-top:22px">
@@ -372,20 +372,24 @@ function drawTree(p){
   function build(gen){ const id=Math.floor(rng()*toyN); const node={person:id,gen,children:null};
     if(gen<depth){ node.children=[build(gen+1),build(gen+1)]; } return node; }
   seed=seed; const root=build(0);
-  const counts=new Map(); (function walk(n){counts.set(n.person,(counts.get(n.person)||0)+1); (n.children||[]).forEach(walk)})(root);
+  // A person exists in exactly one generation (discrete-generation model): identity is
+  // (generation, id). Duplicates — pedigree collapse — can only occur within a generation,
+  // never across depths: the proband (g=0) is exactly one slot, and nobody is their own grandparent.
+  const keyOf=n=>n.gen+":"+n.person;
+  const counts=new Map(); (function walk(n){counts.set(keyOf(n),(counts.get(keyOf(n))||0)+1); (n.children||[]).forEach(walk)})(root);
   const distinct=[...counts.keys()].length, total=Math.pow(2,depth+1)-1, leaves=Math.pow(2,depth);
   const W=900,H=430, tree=d3.tree().size([W-30,H-70]);
   const hier=d3.hierarchy(root); tree(hier);
   const {svg,g}=baseChart("#chartTree",W,H,{t:34,r:15,b:15,l:15});
   const palette=d3.scaleOrdinal(d3.schemeTableau10.concat(d3.schemeSet3));
-  const colour=id=>palette(id%22);
+  const colour=d=>palette(keyOf(d.data));
   g.selectAll("path").data(hier.links()).join("path").attr("fill","none").attr("stroke","#c9b995").attr("d",d3.linkVertical().x(d=>d.x).y(d=>d.y));
   const nodes=g.selectAll("g.n").data(hier.descendants()).join("g").attr("transform",d=>`translate(${d.x},${d.y})`);
-  nodes.append("rect").attr("x",-13).attr("y",-11).attr("width",26).attr("height",22).attr("rx",3).attr("fill",d=>colour(d.data.person)).attr("stroke","#1a1710").attr("stroke-width",d=>counts.get(d.data.person)>1?1.8:.6)
-    .on("mousemove",(ev,d)=>showTip(ev,`<b>Person #${d.data.person}</b> · occupies <b>${counts.get(d.data.person)} slot(s)</b><br>generation g=${d.data.gen}${counts.get(d.data.person)>1?"<br><b>Pedigree collapse:</b> this ancestor appears multiple times.":""}`)).on("mouseleave",hideTip);
+  nodes.append("rect").attr("x",-13).attr("y",-11).attr("width",26).attr("height",22).attr("rx",3).attr("fill",colour).attr("stroke","#1a1710").attr("stroke-width",d=>counts.get(keyOf(d.data))>1?1.8:.6)
+    .on("mousemove",(ev,d)=>showTip(ev,`<b>Person #${d.data.person} (generation g=${d.data.gen})</b> · occupies <b>${counts.get(keyOf(d.data))} slot(s) in this generation</b>${counts.get(keyOf(d.data))>1?"<br><b>Pedigree collapse:</b> this ancestor appears multiple times at the same depth.":""}`)).on("mouseleave",hideTip);
   nodes.append("text").attr("text-anchor","middle").attr("dy",4).style("font","700 9px system-ui").text(d=>d.data.person);
-  g.append("text").attr("x",0).attr("y",-16).style("font","700 11px system-ui").text(`Toy pool N_toy=${toyN} · depth ${depth} · same colour / number = same person`);
-  $("treeReadout").innerHTML=`In this draw the whole tree has <b>${total} slots</b> filled by only <b>${distinct} distinct people</b> (toy pool N<sub>toy</sub>=${toyN}). Duplicated ancestors: <b>${[...counts.values()].filter(v=>v>1).length}</b> people occupy more than one slot. At the leaf generation alone there are ${fmt(leaves)} slots. Re-run for a new pedigree.`;
+  g.append("text").attr("x",0).attr("y",-16).style("font","700 11px system-ui").text(`Toy pool N_toy=${toyN} per generation · depth ${depth} · same colour / number within a row = same person`);
+  $("treeReadout").innerHTML=`In this draw the whole tree has <b>${total} slots</b> filled by <b>${distinct} distinct people</b> — summing the distinct people in each generation separately (the proband counts once; nobody appears in two generations). Duplicated ancestors: <b>${[...counts.values()].filter(v=>v>1).length}</b> people occupy more than one slot <i>within their own generation</i>. At the leaf generation alone there are ${fmt(leaves)} slots. Re-draw for a new pedigree.`;
 }
 
 // ---------- Update ----------
