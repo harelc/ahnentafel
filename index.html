@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pedigree Collapse — Why You Do Not Have 2ⁿ Ancestors</title>
+<meta name="description" content="An interactive model of pedigree collapse in endogamous populations: why ancestral slots (2^g) are not distinct ancestors, with founder bottlenecks, endogamy, consanguinity, effective population size, and the papers behind the model.">
+<meta property="og:title" content="You do not have 2ⁿ ancestors">
+<meta property="og:description" content="Ancestral slots are not people. An interactive pedigree-collapse model for endogamous and bottlenecked populations.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{--ink:#1a1710;--paper:#f7f2e7;--paper2:#efe6d0;--accent:#8c2f1b;--accent2:#1d5c57;--gold:#c19a2e;--muted:#6b6252;--line:#d8cbb0;--card:#fffaf0}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Georgia,'Times New Roman',serif;line-height:1.55}
+a{color:var(--accent2)}header{padding:48px 6vw 28px;border-bottom:3px double var(--ink);background:radial-gradient(ellipse at 20% -20%,#fff8e0,transparent 60%),var(--paper)}
+.kicker{letter-spacing:.22em;text-transform:uppercase;font:700 11px system-ui;color:var(--accent)}
+h1{font-size:clamp(34px,5.2vw,64px);line-height:.98;margin:.15em 0 .25em;font-weight:900;letter-spacing:-.02em}
+h1 em{color:var(--accent);font-style:italic}
+.sub{font-size:clamp(16px,2vw,21px);max-width:62ch;color:#3d362a}
+.badmath{margin:22px 0 0;display:flex;gap:14px;flex-wrap:wrap}
+.chip{background:var(--ink);color:var(--paper);padding:10px 14px;font:600 13px system-ui;border-radius:3px}
+.chip b{color:#ffd66e}.chip.alt{background:var(--card);color:var(--ink);border:1px solid var(--ink)}
+main{max-width:1380px;margin:0 auto;padding:24px 20px 60px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--ink);padding:18px;box-shadow:4px 4px 0 #e7dcc2}
+.panel.accent{border-top-color:var(--accent)}.panel.teal{border-top-color:var(--accent2)}
+h2{font-size:22px;margin:0 0 6px;line-height:1.1}h3{font-size:16px;margin:18px 0 6px;font-family:system-ui}
+p.small,small{font-size:13px;color:var(--muted)}
+.controls{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.ctl{margin:14px 0;border-bottom:1px dashed var(--line);padding-bottom:12px}
+.ctl label{display:flex;justify-content:space-between;font:700 12.5px system-ui;gap:8px}
+.ctl label output{color:var(--accent);font-variant-numeric:tabular-nums;text-align:right}
+.ctl .help{font:400 11.5px system-ui;color:var(--muted);margin-top:3px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=number]{width:100%;padding:7px;font:600 13px system-ui;background:white;border:1px solid var(--line)}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button{cursor:pointer;border:1px solid var(--ink);background:var(--paper);padding:8px 9px;font:700 12px system-ui;border-radius:3px}
+button:hover,button.on{background:var(--ink);color:var(--paper)}
+button.primary{background:var(--accent);color:white;border-color:var(--accent);width:100%;padding:11px}
+.check{display:flex;gap:8px;font:600 12.5px system-ui;margin:6px 0;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--ink);color:var(--paper);padding:14px}.stat:nth-child(2){background:var(--accent)}.stat:nth-child(3){background:var(--accent2)}.stat:nth-child(4){background:#5b4a12}
+.stat .v{font-size:clamp(20px,2.4vw,30px);font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.stat .k{font:700 10.5px system-ui;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-top:6px}
+svg{width:100%;height:auto;display:block}
+.axis text{font:11px system-ui;fill:#5a5242}.axis path,.axis line{stroke:#b9a888}
+.year-axis text{fill:#8c2f1b;font-weight:700}.year-axis path,.year-axis line{stroke:#8c2f1b}
+.gridline{stroke:#e3d8bd;stroke-dasharray:2 3}
+.legend{font:600 12px system-ui}
+.tooltip{position:fixed;pointer-events:none;background:#1a1710;color:#fff8e6;padding:9px 11px;font:12px system-ui;border-radius:4px;opacity:0;z-index:20;max-width:290px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+table{border-collapse:collapse;width:100%;font:12.5px system-ui;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:6px 7px;text-align:right}th:first-child,td:first-child{text-align:left}
+th{background:var(--paper2);position:sticky;top:0}
+.tblwrap{max-height:340px;overflow:auto;border:1px solid var(--line)}
+.eq{background:#1a1710;color:#f3e9cf;padding:16px 18px;overflow-x:auto;margin:12px 0}
+.eq .katex{color:#f3e9cf}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}@media(max-width:960px){.two{grid-template-columns:1fr}}
+.callout{border-left:5px solid var(--gold);background:#fff6d8;padding:12px 14px;margin:14px 0;font-size:14.5px}
+.warn{border-left-color:var(--accent);background:#fdeee8}
+ul{padding-left:20px}li{margin:5px 0}
+footer{border-top:3px double var(--ink);padding:24px 6vw;font-size:13px;color:var(--muted)}
+.tag{display:inline-block;font:700 10px system-ui;letter-spacing:.1em;text-transform:uppercase;border:1px solid currentColor;padding:2px 6px;border-radius:20px}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Genealogy · Population Genetics · Pedigree Collapse</div>
+  <h1>You do not have<br><em>2<sup>n</sup> ancestors.</em></h1>
+  <p class="sub">The viral argument counts <b>ancestral slots</b> in an <i>Ahnentafel</i> (ancestor table), then pretends every slot was a different person. In a finite — and especially in an <b>endogamous</b> (marrying-within-the-group) population — the same ancestors fill many slots. That is <b>pedigree collapse</b>. This lab lets you model it.</p>
+  <div class="badmath">
+    <div class="chip">THE FALLACY &nbsp; 2<sup>30</sup> slots ≈ <b>1.07 billion</b> people c. 1200 CE — more than lived on Earth</div>
+    <div class="chip alt">THE FIX &nbsp; slots ≠ people. Count <b>distinct ancestors</b> \(A_g\), not slots \(S_g=2^g\).</div>
+  </div>
+</header>
+
+<main>
+<div class="grid">
+  <!-- CONTROLS -->
+  <aside class="panel controls">
+    <h2>Model controls</h2>
+    <p class="small">All population sizes below are <b>effective breeding population size \(N_e\)</b> — the size of an idealised random-mating population with the same rate of genetic drift — <i>not</i> census size \(N_c\). Typically \(N_e/N_c \approx 0.1\!-\!0.3\).</p>
+
+    <h3>1 · Historical scenario presets</h3>
+    <div class="presets" id="presets"></div>
+    <p class="help" style="font:11.5px system-ui;color:var(--muted)">Presets are illustrative syntheses from the literature (see Sources), not censuses of any one town. Tune them — that is the point.</p>
+
+    <h3>2 · Population trajectory</h3>
+    <div class="ctl"><label>Generations back, \(G\) <output id="o_gmax"></output></label><input type="range" id="gmax" min="10" max="45" step="1" value="20"><div class="help">Depth of the pedigree. \(g=1\) = parents, \(g=2\) = grandparents…</div></div>
+    <div class="ctl"><label>Present \(N_e\) (log scale) <output id="o_N0"></output></label><input type="range" id="N0" min="2" max="6.3" step="0.05" value="4.7"><div class="help">Effective breeding pool of the <i>reference cohort in this thought experiment</i> — <b>not</b> an estimate for all Ashkenazi Jews today (census \(\sim\)10 million; a worldwide parental cohort would be in the millions, with \(N_e\) plausibly in the high hundreds of thousands). The default 50,119 is set low so saturation is visible within 20 generations; for a realistic modern, fully random-mating worldwide pool, drag it to \(10^{5.5}\!-\!10^{6.5}\) and watch collapse retreat to the bottleneck generations, where it belongs.</div></div>
+    <div class="ctl"><label><span><input type="checkbox" id="useBn" checked style="width:auto"> Bottleneck / founder event</span></label></div>
+    <div class="ctl"><label>Founder \(N_f\) at bottleneck (log) <output id="o_Nf"></output></label><input type="range" id="Nf" min="1.3" max="4.5" step="0.05" value="2.54"><div class="help">For Ashkenazi Jews, published estimates cluster around \(N_f\!\approx\!250\!-\!420\) effective founders (Carmi et al. 2014).</div></div>
+    <div class="ctl"><label>Bottleneck timing \(g_b\) (generations ago) <output id="o_gb"></output></label><input type="range" id="gb" min="5" max="40" step="1" value="30"><div class="help">\(\approx\) 600–800 years ago at 25 yr/generation \(\Rightarrow g_b\approx24\!-\!32\).</div></div>
+    <div class="ctl"><label>Older \(N_e\) before bottleneck (log) <output id="o_Nanc"></output></label><input type="range" id="Nanc" min="2.5" max="5.5" step="0.05" value="4.3"><div class="help">Ancestral (e.g. medieval / ancient Levantine–European) breeding pool.</div></div>
+
+    <h3>3 · \(N_e\) vs census \(N_c\)</h3>
+    <div class="ctl"><label>\(N_e/N_c\) today, \(v_0\) <output id="o_v0"></output></label><input type="range" id="v0" min="0.02" max="0.8" step="0.01" value="0.20"><div class="help">Dynamics run on \(N_e\) (that's what drift, coalescence and IBD see). This quotient translates to head-counts: \(N_c = N_e^{(\text{entered})}/v\). If you're starting from a historical census or kehillah register, set the size sliders to \(\approx N_c \times v\) (kehillah = the organised Jewish community).</div></div>
+    <div class="ctl"><label><span><input type="checkbox" id="vVary" style="width:auto"> Let \(v\) vary by era</span></label></div>
+    <div class="ctl"><label>\(N_e/N_c\) in the past, \(v_{\text{past}}\) <output id="o_vpast"></output></label><input type="range" id="vpast" min="0.02" max="0.8" step="0.01" value="0.10"><div class="help">Interpolated from \(v_0\) (present) to \(v_{\text{past}}\) at the bottleneck. Higher reproductive skew, polygyny, war/famine mortality in some eras push \(v\) down; nothing forces it constant.</div></div>
+    <div class="callout" id="ncReadout" style="margin:8px 0"></div>
+
+    <h3>4 · Mating structure</h3>
+    <div class="ctl"><label>Endogamy rate \(e\) <output id="o_e"></output></label><input type="range" id="e" min="0" max="0.99" step="0.01" value="0.9"><div class="help">Probability a mate is drawn from within the subgroup rather than the wider population.</div></div>
+    <div class="ctl"><label>Subgroup fraction \(s\) <output id="o_s"></output></label><input type="range" id="s" min="0.02" max="1" step="0.01" value="0.15"><div class="help">Subgroup's share of the total population. Effective mating pool multiplier \(= (1-e)+e\,s\).</div></div>
+    <div class="ctl"><label>Consanguineous unions \(\alpha\) <output id="o_alpha"></output></label><input type="range" id="alpha" min="0" max="0.4" step="0.01" value="0.05"><div class="help">Share of unions between close kin. Thins distinct ancestors by \((1-\alpha\bar d)^{g-1}\) (see §3b) <i>and</i> raises \(F\). Drag it: the main chart, collapse, multiplicity and table should all move — the deeper \(g\), the more.</div></div>
+    <div class="ctl"><label>Generation time (yr) <output id="o_gt"></output></label><input type="range" id="gt" min="20" max="35" step="1" value="27"><div class="help">Converts generations to calendar years. Genealogical generation \(\neq\) 25 yr by law.</div></div>
+
+    <h3>5 · Display</h3>
+    <div class="ctl"><label>Compare against</label><select id="compare"><option value="">— none —</option></select></div>
+    <button class="primary" id="reroll">↻ Re-draw simulated pedigree (new seed)</button>
+    <p class="help" style="font:11.5px system-ui;color:var(--muted)">Random seed: <span id="seedOut"></span></p>
+  </aside>
+
+  <!-- RESULTS -->
+  <section>
+    <div class="stats">
+      <div class="stat"><div class="v" id="stSlots">—</div><div class="k">Ancestral slots \(S_G=2^G\)</div></div>
+      <div class="stat"><div class="v" id="stDistinct">—</div><div class="k">Distinct ancestors at \(G\) (model)</div></div>
+      <div class="stat"><div class="v" id="stCollapse">—</div><div class="k">Pedigree collapse at \(G\)</div></div>
+      <div class="stat"><div class="v" id="stSat">—</div><div class="k">Saturation \(g^*\): \(2^{g^*}\!\approx\!N_e\)</div></div>
+    </div>
+
+    <div class="panel accent">
+      <h2>Distinct ancestors vs. ancestral slots</h2>
+      <p class="small">Log scale. The black line is the fallacy (\(S_g=2^g\), unbounded). Coloured lines are finite-population models: distinct ancestors saturate at the breeding pool, because slots are drawn <i>with replacement</i> from it. Hover for values. Dashed = comparison scenario.</p>
+      <div id="chartMain"></div>
+      <div class="callout" id="headlineCallout"></div>
+    </div>
+
+    <div class="two" style="margin-top:22px">
+      <div class="panel teal"><h2>Pedigree collapse &amp; multiplicity</h2><p class="small">Collapse \(C_g = 1-A_g/S_g\). Multiplicity \(m_g=S_g/A_g\) = average number of slots one distinct ancestor occupies — how many times they appear in your <i>Ahnentafel</i>.</p><div id="chartCollapse"></div></div>
+      <div class="panel teal"><h2>Population trajectory \(N_e(g)\) &amp; implied \(N_c(g)\)</h2><p class="small">Looking backwards: expansion unwinds, the founder bottleneck bites, then the older population. The solid \(N_e(g)\) curve — not a constant — drives everything else; dashed is the head-count \(N_c(g)=N_e/v(g)\) you'd need to produce it.</p><div id="chartPop"></div></div>
+    </div>
+
+    <div class="two" style="margin-top:22px">
+      <div class="panel"><h2>Inbreeding &amp; coalescence</h2><p class="small"><b>Wright's inbreeding coefficient</b> \(F\) = probability the two alleles at a locus are <b>identical by descent (IBD)</b>. Drift in a pool of \(N_e\) adds \(\Delta F \approx 1/(2N_e)\) per generation.</p><div id="chartF"></div><div id="fReadout" class="callout"></div></div>
+
+      <div class="panel"><h2>A concrete pedigree, with collapse</h2><p class="small">A simulated 7-generation pedigree. Each <b>colour = one real person</b>; the same colour in several boxes = pedigree collapse made visible. The pool here is deliberately shrunk to a toy \(N_{\text{toy}}\) so duplicates are visible at this depth — in reality collapse at \(g\le7\) is modest unless \(N_e\) is small or unions are consanguineous.</p><div id="chartTree"></div><div id="treeReadout" class="callout"></div></div>
+    </div>
+
+    <div class="panel" style="margin-top:22px">
+      <h2>The mathematics</h2>
+      <div class="eq">$$ S_g = 2^{g} \qquad\text{(ancestral slots / Ahnentafel places at depth }g\text{)} $$</div>
+      <p><b>1 · Occupancy (birthday-problem) model.</b> Treat the \(S_g\) slots as draws <i>with replacement</i> from \(N_e(g)\) potential ancestors. The expected number of <i>distinct</i> people is the classic occupancy result:</p>
+      <div class="eq">$$ \mathbb{E}[A_g] \;=\; N_e(g)\left[1-\left(1-\tfrac{1}{N_e(g)}\right)^{S_g}\right] \;\approx\; N_e(g)\left(1-e^{-S_g/N_e(g)}\right), \qquad C_g = 1-\frac{A_g}{S_g},\quad m_g=\frac{S_g}{A_g} $$</div>
+      <p>When \(S_g \ll N_e\), \(A_g\approx S_g\) (almost no collapse — the video's intuition works for ~10 generations). When \(S_g \gg N_e\), \(A_g\to N_e\): <b>saturation</b>. Crossover at \(g^*=\log_2 N_e\). The table's \(\sum_{k\le g} A_k\) column adds the per-generation distinct counts: since different generations are mostly different birth cohorts, that sum is close to the total number of distinct people in the whole pedigree up to depth \(g\) (it slightly overcounts anyone who appears at two different depths, which requires large parental-age differences).</p>
+      <p><b>2 · Endogamy as a shrunken mating pool.</b> With endogamy rate \(e\) and subgroup share \(s\), mates come from an effective pool \(N_e^{\text{mate}} = N_e\big[(1-e)+e\,s\big]\). At \(e=0.9,\ s=0.15\) the pool is only \(0.235\,N_e\) — collapse arrives \(\log_2(1/0.235)\approx2.1\) generations sooner, every generation.</p>
+      <p><b>2b · Why \(N_e \ll N_c\), and why their quotient \(v=N_e/N_c\) is not a constant of nature.</b> \(N_c\) counts heads: children, the elderly, the childless, everyone. \(N_e\) counts only the population's <i>genetic</i> contribution to the next generation, and three mechanisms shrink it. <b>(i) Variance in reproductive success:</b> if family size has variance \(V_k\) (mean \(\bar k=2\) in a stable population), \(N_e \approx (4N-2)/(V_k+2)\) — Poisson family sizes (\(V_k=2\)) give \(N_e\approx N\), but human \(V_k\) is larger (some lineages have many children, many have none; historically, high-status male skew could be extreme), so \(N_e\) falls. <b>(ii) Unequal breeding sex ratio:</b> \(N_e = 4N_mN_f/(N_m+N_f)\) — a small number of breeding males caps \(N_e\) near \(4N_m\) no matter how large \(N_f\) is. <b>(iii) Fluctuating size:</b> over \(t\) generations \(N_e\) is the <i>harmonic</i> mean, \(1/N_e = \tfrac1t\sum_i 1/N_i\), which is dominated by the smallest generation — one bottleneck generation at 350 outweighs a century at 100,000. Add overlapping generations, subdivision, and selection at linked sites, and long-term human \(N_e/N_c\) of roughly 0.1–0.3 is typical — but \(V_k\), sex ratio and size all changed across eras (famine, war, plague, polygyny, later fertility transition), so \(v\) changed too. Hence the controls: \(v_0\) today, \(v_{\text{past}}\) at the bottleneck, interpolated in between if you tick the box. \(v\) never enters the dynamics — drift, coalescence and collapse see only \(N_e\) — it is purely the bridge \(N_c=N_e/v\) between the model and historical head-counts, and the table now shows it generation by generation.</p>
+      <div class="eq">$$ N_e \approx \frac{4N-2}{V_k+2}, \qquad N_e = \frac{4N_mN_f}{N_m+N_f}, \qquad \frac{1}{N_e} = \frac{1}{t}\sum_{i=1}^{t}\frac{1}{N_i}, \qquad v(g)=\frac{N_e(g)}{N_c(g)} $$</div>
+      <div class="eq">$$ N_e^{\text{mate}}(g)=N_e(g)\big[(1-e)+e\,s\big],\qquad F_g = 1-\prod_{k=1}^{g}\left(1-\tfrac{1}{2N_e^{\text{mate}}(k)}\right),\qquad \Delta F\approx \frac{1}{2N_e} $$</div>
+      <p><b>3 · Wright's path method &amp; kinship.</b> For a specific pedigree, \(F_X=\sum ( \tfrac12 )^{n+m+1}(1+F_A)\) summed over all paths through common ancestors \(A\) (\(n,m\) = generations from each parent to \(A\)). The <b>coefficient of relationship</b> \(r=2\phi\) (\(\phi\) = kinship/coancestry coefficient) gives additive genetic relatedness: parent–child \(r=\tfrac12\), first cousins \(r=\tfrac18\), and — the punchline — two random members of the same population share small but non-zero \(r\) through <i>thousands</i> of such paths. Offspring of first cousins: \(F=\tfrac1{16}\); second cousins: \(F=\tfrac1{64}\). This lab blends drift-\(F\) with a consanguinity term \(F \leftarrow 1-(1-F_{\text{drift}})(1-\alpha/16)\) as a crude mixture.</p>
+      <p><b>3b · Consanguineous unions (structural, on top of random collapse).</b> Occupancy with \(N_e\) already captures <i>chance</i> relatedness. Systematic cousin marriage adds more: in a first-cousin union the parents share a pair of grandparents, so \(\tfrac14\) of all Ahnentafel slots above that union are duplicates (the shared pair's entire subtrees); for second cousins, \(\tfrac18\). If a fraction \(\alpha\) of unions at <i>every</i> ancestral generation are consanguineous, with mean duplicated fraction \(\bar d\approx0.20\) (60/40 first/second-cousin mix), distinct ancestors are thinned multiplicatively — overlaps-of-overlaps neglected, a first-order approximation:</p>
+      <div class="eq">$$ A_g^{(\text{cons})} = A_g^{(\text{rand})}\,\big(1-\alpha\bar d\big)^{\,g-1}, \qquad \bar d \approx 0.20 $$</div>
+      <p>Note the compounding in \(g\): at \(\alpha=0.05\) this is only a 1% thinning per generation, but \((0.99)^{19}\approx0.83\) by \(g=20\) and \((0.99)^{34}\approx0.71\) by \(g=35\) — deep in the pedigree, a large share of the distinct ancestors that random collapse alone would leave are gone. At \(\alpha=0\) the factor is exactly 1 and the model reduces to pure occupancy. This is why the \(\alpha\) slider barely matters at \(g\le10\) and matters a great deal deep in the pedigree — and why it also appears in \(F\).</p>
+      <p><b>4 · Coalescent &amp; identical ancestors.</b> Going backwards, two lineages <b>coalesce</b> (find a common ancestor) with probability \(\approx 1/(2N_e)\) per generation; expected time to their <b>MRCA</b> (most recent common ancestor) is \(\approx 2N_e\) generations for a pair. Chang (1999) proved for a well-mixed two-parent population that the MRCA sits \(\sim\!\log_2 N\) generations back and the <b>identical ancestors point (IAP)</b> — where everyone alive then is either ancestor of <i>everyone</i> today or of <i>no one</i> — at \(\approx1.77\log_2 N\); Rohde, Olson &amp; Chang (2004) showed this survives realistic population structure. Structure and endogamy push it back, but not to infinity. That, not \(2^g\), is the correct picture.</p>
+      <div class="callout warn"><b>What this model is not.</b> It assumes random mating within the (shrunken) pool, discrete generations, and no geography, class, or family-size variance. Real pedigrees are structured: reproductive skew lowers \(N_e\) further; migration raises it. Treat outputs as <i>orders of magnitude and mechanisms</i>, not as your personal family tree. Your documented tree, DNA segment sharing (measured in centimorgans, cM), and IBD segment analysis answer personal questions; this answers the \(2^g\) fallacy.</div>
+    </div>
+
+    <div class="panel" style="margin-top:22px">
+      <h2>Generation-by-generation table</h2>
+      <div class="tblwrap"><table id="tbl"><thead><tr><th>\(g\)</th><th>≈ year</th><th>Slots \(S_g\)</th><th>\(N_e(g)\)</th><th>Implied \(N_c\)</th><th>\(v\)</th><th>Distinct \(A_g\)</th><th>\(\sum_{k\le g} A_k\)</th><th>Collapse \(C_g\)</th><th>\(m_g\)</th><th>Consanguinity factor</th><th>\(F_g\)</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="two" style="margin-top:22px">
+      <div class="panel"><h2>Glossary</h2><ul>
+        <li><b>Ahnentafel</b> — numbered ancestor table; slot numbers double each generation (Sosa–Stradonitz numbering).</li>
+        <li><b>Pedigree collapse</b> — reduction in distinct ancestors because relatives reproduce; measured here by \(C_g\).</li>
+        <li><b>Endogamy</b> — marrying within a defined group (religious, geographic, caste-like) over many generations.</li>
+        <li><b>Founder effect / bottleneck</b> — a population descends from few founders \(N_f\); drift and shared ancestry spike.</li>
+        <li><b>\(N_e\) vs \(N_c\)</b> — effective vs census size. Unequal family sizes, sex ratio and variance cut \(N_e\) well below head-count.</li>
+        <li><b>IBD — Identity by Descent</b>: two DNA segments are copies inherited from the <i>same segment in a common ancestor</i>, without recombination breaking them up in between. IBD is the gold-standard evidence of recent shared ancestry; its segment lengths (in centimorgans, cM) date the common ancestor, and the drift and coalescence mathematics in §2b/§4 is about how IBD accumulates in a small pool.</li>
+        <li><b>IBS — Identity by State</b>: two DNA segments happen to <i>look the same</i> (same alleles) whether or not they came from a recent common ancestor — they may match by chance, or from ancestry so ancient it predates the pedigree. IBS \(\neq\) IBD: matching DNA is only evidence of relatedness once it's shown (or modelled) to be identical <i>by descent</i>, not merely identical <i>by state</i>.</li>
+        <li><b>Kinship \(\phi\), relationship \(r=2\phi\), inbreeding \(F\)</b> — Wright/Malécot coefficients; \(F\) of a child = \(\phi\) of its parents.</li>
+        <li><b>Coalescence</b> — tracing two lineages backwards until they merge in a shared ancestor.</li>
+        <li><b>MRCA (most recent common ancestor)</b> — the most recent person from whom two (or all) people in question descend.</li>
+        <li><b>IAP (identical ancestors point)</b> — the generation before which everyone alive is either an ancestor of <i>everyone</i> alive today, or of <i>no one</i>.</li>
+        <li><b>Shtetl / kehillah</b> — a small, largely Jewish town in Eastern Europe / its organised Jewish community (which kept the registers and arranged much of social life, including marriages).</li>
+        <li><b>Genealogical vs genetic ancestors</b> — beyond ~7–10 generations, many genealogical ancestors contribute <i>no DNA</i> to you (no segments inherited), even though they are truly your ancestors.</li>
+      </ul></div>
+      <div class="panel"><h2>Main papers</h2>
+      <p class="small">Each annotation says which part of this site's model the paper supports.</p>
+      <h3>Why \(2^g\) fails: MRCA &amp; the identical ancestors point</h3><ul>
+        <li>Chang, J.T. (1999). Recent common ancestors of all present-day individuals. <i>Advances in Applied Probability</i> 31(4):1002–1026. <a href="https://doi.org/10.1017/S0001867800009587">doi:10.1017/S0001867800009587</a> — two-parent Wright–Fisher model: MRCA at \(\sim\log_2 N\) generations, IAP at \(\approx1.77\log_2 N\). The theoretical backbone of the saturation point \(g^*\).</li>
+        <li>Rohde, D.L.T., Olson, S. &amp; Chang, J.T. (2004). Modelling the recent common ancestry of all living humans. <i>Nature</i> 431(7008):562–566. <a href="https://doi.org/10.1038/nature02842">doi:10.1038/nature02842</a> — shows recent MRCA/IAP survive population substructure and endogamy-like mating patterns, via analytic + Monte-Carlo models.</li>
+      </ul>
+      <h3>Coefficients: \(F\), kinship, coalescence, genetic ancestors</h3><ul>
+        <li>Wright, S. (1922). Coefficients of inbreeding and relationship. <i>The American Naturalist</i> 56(645):330–338. <a href="https://doi.org/10.1086/279872">doi:10.1086/279872</a> — defines \(F\) and the path method used in §3.</li>
+        <li>Kingman, J.F.C. (1982). The coalescent. <i>Stochastic Processes and their Applications</i> 13(3):235–248. <a href="https://doi.org/10.1016/0304-4149(82)90011-4">doi:10.1016/0304-4149(82)90011-4</a> — the coalescent framework behind §4 (pairwise coalescence \(\approx1/(2N_e)\) per generation).</li>
+        <li>Donnelly, K.P. (1983). The probability that related individuals share some section of genome identical by descent. <i>Theoretical Population Biology</i> 23(1):34–63. <a href="https://doi.org/10.1016/0040-5809(83)90004-7">doi:10.1016/0040-5809(83)90004-7</a> — why genealogical ancestors beyond ~7–10 generations often contribute no DNA: the genetic-vs-genealogical ancestor distinction.</li>
+      </ul>
+      <h3>Jewish demographic history: bottlenecks, endogamy, IBD</h3><ul>
+        <li>Carmi, S. et al. (2014). Sequencing an Ashkenazi reference panel supports population-targeted personal genomics and illuminates Jewish and European origins. <i>Nature Communications</i> 5:4835. <a href="https://doi.org/10.1038/ncomms5835">doi:10.1038/ncomms5835</a> — the Ashkenazi preset: effective bottleneck of \(\approx\)350 (250–420) individuals, 25–32 generations ago, then 16–53%/generation expansion. Direct source for \(N_f\) and \(g_b\).</li>
+        <li>Palamara, P.F., Lencz, T., Darvasi, A. &amp; Pe'er, I. (2012). Length distributions of identity by descent reveal fine-scale demographic history. <i>American Journal of Human Genetics</i> 91(5):809–822. <a href="https://doi.org/10.1016/j.ajhg.2012.08.030">doi:10.1016/j.ajhg.2012.08.030</a> — derives \(N_e(g)\) trajectories from IBD segment lengths; recovers the AJ founder event between two expansions. Source for the trajectory shape in the \(N_e(g)\) chart.</li>
+        <li>Waldman, S. et al. (2022). Genome-wide data from medieval German Jews show that the Ashkenazi founder event pre-dated the 14th century. <i>Cell</i> 185(25):4703–4716.e16. <a href="https://doi.org/10.1016/j.cell.2022.11.002">doi:10.1016/j.cell.2022.11.002</a> — ancient DNA from 14th-century Erfurt: the founder event, high runs of homozygosity, and medieval substructure were already in place — an independent check on the bottleneck timing.</li>
+        <li>Xue, J., Lencz, T., Darvasi, A., Pe'er, I. &amp; Carmi, S. (2017). The time and place of European admixture in Ashkenazi Jewish history. <i>PLoS Genetics</i> 13(4):e1006644. <a href="https://doi.org/10.1371/journal.pgen.1006644">doi:10.1371/journal.pgen.1006644</a> — admixture \(\approx\)30 generations ago, mainly Southern European; dates the limited gene flow that the endogamy parameter \(e\) summarises.</li>
+        <li>Atzmon, G. et al. (2010). Abraham's children in the genome era: major Jewish diaspora populations comprise distinct genetic clusters with shared Middle Eastern ancestry. <i>American Journal of Human Genetics</i> 86(6):850–859. <a href="https://doi.org/10.1016/j.ajhg.2010.04.015">doi:10.1016/j.ajhg.2010.04.015</a> — IBD sharing across Ashkenazi, Sephardic and Mizrahi groups; severe AJ bottleneck + expansion; within-group relatedness \(\approx\) fifth cousins.</li>
+        <li>Behar, D.M. et al. (2010). The genome-wide structure of the Jewish people. <i>Nature</i> 466(7303):238–242. <a href="https://doi.org/10.1038/nature09103">doi:10.1038/nature09103</a> — 14 diaspora communities vs 69 Old World populations: most Jewish groups form a tight Levant-linked cluster, Ethiopian/Indian communities cluster with neighbours — why this site refuses a single "Jewish" preset.</li>
+        <li>Slatkin, M. (2004). A population-genetic test of founder effects and implications for Ashkenazi Jewish diseases. <i>American Journal of Human Genetics</i> 75(2):282–293. <a href="https://doi.org/10.1086/423146">doi:10.1086/423146</a> — founder-effect test consistent with a severe bottleneck c. 1100–1400 CE (and an earlier one c. 75 CE); the disease-allele consequences of collapse.</li>
+      </ul><p class="small">Preset numbers are rounded teaching values synthesised from these sources. For Sephardic, Mizrahi, Yemenite, Mountain Jewish, Romaniote and other communities, bottlenecks differ in timing and depth — use the sliders to encode the history you are studying rather than treating “Jewish populations” as one population. Foundational textbook treatment: Crow &amp; Kimura (1970), <i>An Introduction to Population Genetics Theory</i>, Harper &amp; Row.</p></div>
+    </div>
+  </section>
+</div>
+</main>
+<footer>Built as an interactive modelling lab. Analytic occupancy model + a simulated pedigree, all in <code>index.html</code> (D3.js v7, KaTeX). No data leaves your browser.</footer>
+<div class="tooltip" id="tip"></div>
+
+<script>
+// ---------- State & presets ----------
+const PRESETS={
+ outbred:{label:"Large outbred",N0:5.7,Nf:3.5,gb:30,Nanc:5,useBn:false,e:0.05,s:0.6,alpha:0.005},
+ mixed:{label:"Mixed European town",N0:4.5,Nf:3.3,gb:28,Nanc:4.6,useBn:false,e:0.35,s:0.35,alpha:0.01},
+ ashkenazi:{label:"Ashkenazi (bottleneck)",N0:4.7,Nf:2.54,gb:30,Nanc:4.3,useBn:true,e:0.9,s:0.15,alpha:0.05},
+ sephardic:{label:"Sephardic post-1492",N0:4.4,Nf:3.0,gb:20,Nanc:4.4,useBn:true,e:0.8,s:0.2,alpha:0.04},
+ shtetl:{label:"Isolated shtetl / kehillah",N0:3.3,Nf:2.3,gb:18,Nanc:3.8,useBn:true,e:0.92,s:0.12,alpha:0.08},
+ yemenite:{label:"Small isolated community",N0:3.0,Nf:2.1,gb:35,Nanc:3.4,useBn:true,e:0.95,s:0.08,alpha:0.10},
+};
+let seed=20261115;
+function rng(){seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff}
+
+const $=id=>document.getElementById(id);
+const fmt=d3.format(",.0f"), fmt2=d3.format(".2f"), pct=d3.format(".1%");
+function readParams(){return{G:+$("gmax").value,N0:Math.pow(10,+$("N0").value),Nf:Math.pow(10,+$("Nf").value),gb:+$("gb").value,Nanc:Math.pow(10,+$("Nanc").value),useBn:$("useBn").checked,e:+$("e").value,s:+$("s").value,alpha:+$("alpha").value,gt:+$("gt").value,v0:+$("v0").value,vpast:+$("vpast").value,vVary:$("vVary").checked,compare:$("compare").value}}
+function paramsFromPreset(k){const p=PRESETS[k];return{G:+$("gmax").value,N0:Math.pow(10,p.N0),Nf:Math.pow(10,p.Nf),gb:p.gb,Nanc:Math.pow(10,p.Nanc),useBn:p.useBn,e:p.e,s:p.s,alpha:p.alpha,gt:+$("gt").value,v0:+$("v0").value,vpast:+$("vpast").value,vVary:$("vVary").checked}}
+
+// census->effective trajectory (log-linear through control points), then mating-pool shrinkage
+function NeAt(g,p){
+  let Nc;
+  if(!p.useBn||g===0) Nc=p.N0;
+  else if(g<=p.gb){ const t=g/p.gb; Nc=Math.exp(Math.log(p.N0)*(1-t)+Math.log(p.Nf)*t); }
+  else { const t=Math.min(1,(g-p.gb)/10); Nc=Math.exp(Math.log(p.Nf)*(1-t)+Math.log(p.Nanc)*t); }
+  return Math.max(2, Nc*((1-p.e)+p.e*p.s));
+}
+function vAt(g,p){ // Ne/Nc quotient, optionally era-varying (log-interpolated to the bottleneck)
+  if(!p.vVary) return p.v0;
+  const horizon=Math.max(1,p.useBn?p.gb:30), t=Math.min(1,g/horizon);
+  return Math.exp(Math.log(p.v0)*(1-t)+Math.log(p.vpast)*t);
+}
+function compute(p){
+  const rows=[]; let Fprod=1;
+  const poolMult=(1-p.e)+p.e*p.s;
+  for(let g=0;g<=p.G;g++){
+    const S=Math.pow(2,g), Ne=NeAt(g,p), v=vAt(g,p), Ncensus=(Ne/poolMult)/v;
+    // stable occupancy: Ne*(1-exp(-S/Ne)) via expm1
+    let A = g===0?1: Ne*(-Math.expm1(-S/Ne));
+    // Structural consanguinity: a first-cousin union makes 1/4 of the slots above it
+    // duplicates (the shared grandparents' subtrees); second cousins 1/8. With a mix
+    // (d-bar = 0.20) occurring independently at each ancestral generation, distinct
+    // ancestors are thinned by (1 - alpha*d-bar)^(g-1). This is on top of random
+    // occupancy collapse, which already includes chance (drift) relatedness.
+    const consF = Math.pow(1 - p.alpha*0.20, Math.max(0,g-1));
+    A*=consF;
+    if(g>=1) Fprod *= (1-1/(2*Ne));
+    let F=1-Fprod; F=1-(1-F)*(1-(g>=1?p.alpha/16:0)*Math.min(1,g/8)); // crude consanguinity blend, saturating ramp
+    rows.push({g,S,Ne,Ncensus,v,A,consF,collapse:g===0?0:1-A/S,m:g===0?1:S/A,F,year:Math.round(2026-g*p.gt)});
+  } return rows;
+}
+// ---------- Charts ----------
+const tip=$("tip");
+function showTip(ev,html){tip.style.opacity=1;tip.innerHTML=html;tip.style.left=(ev.clientX+14)+"px";tip.style.top=(ev.clientY+14)+"px"}
+function hideTip(){tip.style.opacity=0}
+function baseChart(el,W,H,m){const svg=d3.select(el).html("").append("svg").attr("viewBox",`0 0 ${W} ${H}`);const g=svg.append("g").attr("transform",`translate(${m.l},${m.t})`);return{svg,g,iw:W-m.l-m.r,ih:H-m.t-m.b}}
+// Secondary (top) x-axis: calendar year for each generation depth, from generation time.
+function addYearAxis(g,x,p,label=true){
+  g.append("g").attr("class","axis year-axis").call(d3.axisTop(x).ticks(7).tickFormat(d=>Math.round(2026-d*p.gt)));
+  if(label) g.append("text").attr("x",0).attr("y",-22).style("font","700 10.5px system-ui").attr("fill","#6b6252").text("≈ CALENDAR YEAR (2026 − g × generation time) → gets older →");
+}
+
+function drawMain(rows,p,cmpRows){
+  const {g,iw,ih}=baseChart("#chartMain",900,392,{t:40,r:24,b:44,l:78});
+  const x=d3.scaleLinear().domain([0,p.G]).range([0,iw]);
+  const y=d3.scaleLog().domain([1,Math.pow(2,p.G)]).range([ih,0]);
+  g.append("g").selectAll("line").data(y.ticks(12)).join("line").attr("class","gridline").attr("x1",0).attr("x2",iw).attr("y1",d=>y(d)).attr("y2",d=>y(d));
+  addYearAxis(g,x,p);
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x).ticks(10).tickFormat(d=>`g=${d}`));
+  g.append("g").attr("class","axis").call(d3.axisLeft(y).ticks(10,d3.format(".0s")));
+  g.append("text").attr("x",iw/2).attr("y",ih+38).attr("text-anchor","middle").style("font","12px system-ui").text("generations back  g  →");
+  g.append("text").attr("transform","rotate(-90)").attr("x",-ih/2).attr("y",-62).attr("text-anchor","middle").style("font","12px system-ui").text("people (log scale) →");
+  const line=(key,rows)=>d3.line().x(d=>x(d.g)).y(d=>y(Math.max(1,key==="S"?d.S:d[key])))(rows.filter(d=>d.g>=1));
+  const series=[["S","#1a1710",2.5],["A","#8c2f1b",3]];
+  for(const [k,c,w] of series){ g.append("path").attr("fill","none").attr("stroke",c).attr("stroke-width",w).attr("d",line(k,rows)); }
+  if(cmpRows){ g.append("path").attr("fill","none").attr("stroke","#8c2f1b").attr("stroke-width",2).attr("stroke-dasharray","6 4").attr("opacity",.55).attr("d",line("A",cmpRows)); }
+  // interactive hover dots on A
+  g.selectAll("circle.h").data(rows.filter(d=>d.g>=1)).join("circle").attr("cx",d=>x(d.g)).attr("cy",d=>y(d.A)).attr("r",5).attr("fill","transparent")
+   .on("mousemove",(ev,d)=>showTip(ev,`<b>g=${d.g}</b> (≈ ${d.year})<br>Slots 2<sup>g</sup> = ${fmt(d.S)}<br>Distinct A<sub>g</sub> = <b>${fmt(d.A)}</b><br>Collapse = ${pct(d.collapse)} · m<sub>g</sub> = ${fmt2(d.m)}×<br>N<sub>e</sub>(g) = ${fmt(d.Ne)} · consanguinity factor = ${d.consF.toFixed(3)}`)).on("mouseleave",hideTip);
+  const leg=[["#1a1710","Slots 2^g"],["#8c2f1b","Distinct A_g"],...(cmpRows?[["#8c2f1b","Comparison A_g (dashed)"]]:[])];
+  const lg=g.append("g").attr("transform",`translate(14,6)`); leg.forEach((d,i)=>{const r=lg.append("g").attr("transform",`translate(0,${i*17})`);r.append("line").attr("x2",22).attr("stroke",d[0]).attr("stroke-width",3).attr("stroke-dasharray",i===leg.length-1&&cmpRows?"5 3":null);r.append("text").attr("x",28).attr("y",4).attr("class","legend").text(d[1]);});
+}
+function drawCollapse(rows,p){
+  const {g,iw,ih}=baseChart("#chartCollapse",620,312,{t:32,r:52,b:40,l:52});
+  const x=d3.scaleLinear().domain([0,p.G]).range([0,iw]), y=d3.scaleLinear().domain([0,1]).range([ih,0]), y2=d3.scaleLog().domain([1,Math.max(10,d3.max(rows,d=>d.m))]).range([ih,0]);
+  addYearAxis(g,x,p,false);
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x).ticks(7));
+  g.append("g").attr("class","axis").call(d3.axisLeft(y).tickFormat(pct));
+  g.append("g").attr("class","axis").attr("transform",`translate(${iw},0)`).call(d3.axisRight(y2).ticks(5,d3.format(".0s")));
+  g.append("path").attr("fill","#8c2f1b").attr("opacity",.16).attr("d",d3.area().x(d=>x(d.g)).y0(ih).y1(d=>y(d.collapse))(rows));
+  g.append("path").attr("fill","none").attr("stroke","#8c2f1b").attr("stroke-width",2.5).attr("d",d3.line().x(d=>x(d.g)).y(d=>y(d.collapse))(rows));
+  g.append("path").attr("fill","none").attr("stroke","#1d5c57").attr("stroke-width",2.5).attr("stroke-dasharray","5 3").attr("d",d3.line().x(d=>x(d.g)).y(d=>y2(d.m))(rows.filter(d=>d.g>=1)));
+  g.append("text").attr("x",8).attr("y",14).style("font","700 11px system-ui").attr("fill","#8c2f1b").text("collapse C_g");
+  g.append("text").attr("x",iw-8).attr("y",14).attr("text-anchor","end").style("font","700 11px system-ui").attr("fill","#1d5c57").text("multiplicity m_g (log, right)");
+}
+function drawPop(rows,p){
+  const {g,iw,ih}=baseChart("#chartPop",620,312,{t:32,r:20,b:40,l:64});
+  const x=d3.scaleLinear().domain([0,p.G]).range([0,iw]), y=d3.scaleLog().domain([Math.max(10,d3.min(rows,d=>d.Ne)*.6),d3.max(rows,d=>Math.max(d.Ne,d.Ncensus))*1.4]).range([ih,0]);
+  addYearAxis(g,x,p,false);
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x).ticks(7));
+  g.append("g").attr("class","axis").call(d3.axisLeft(y).ticks(6,d3.format(".0s")));
+  g.append("path").attr("fill","#1d5c57").attr("opacity",.15).attr("d",d3.area().x(d=>x(d.g)).y0(ih).y1(d=>y(d.Ne))(rows));
+  g.append("path").attr("fill","none").attr("stroke","#1d5c57").attr("stroke-width",2.5).attr("d",d3.line().x(d=>x(d.g)).y(d=>y(d.Ne))(rows));
+  g.append("path").attr("fill","none").attr("stroke","#6b6252").attr("stroke-width",2).attr("stroke-dasharray","6 4").attr("d",d3.line().x(d=>x(d.g)).y(d=>y(d.Ncensus))(rows));
+  g.append("text").attr("x",8).attr("y",16).style("font","700 11px system-ui").attr("fill","#1d5c57").text("effective N_e(g) — drives the model");
+  g.append("text").attr("x",8).attr("y",32).style("font","700 11px system-ui").attr("fill","#6b6252").text(`implied census N_c(g) = N_e/v(g)${p.vVary?" · v varies by era":""} (dashed)`);
+  if(p.useBn){ g.append("line").attr("x1",x(p.gb)).attr("x2",x(p.gb)).attr("y1",0).attr("y2",ih).attr("stroke","#8c2f1b").attr("stroke-dasharray","4 3");
+    g.append("text").attr("x",x(p.gb)+5).attr("y",20).style("font","700 11px system-ui").attr("fill","#8c2f1b").text(`bottleneck g_b=${p.gb} (≈${Math.round(2026-p.gb*p.gt)})`); }
+}
+function drawF(rows,p){
+  const {g,iw,ih}=baseChart("#chartF",620,332,{t:32,r:20,b:40,l:58});
+  const x=d3.scaleLinear().domain([0,p.G]).range([0,iw]), y=d3.scaleLinear().domain([0,Math.max(.02,d3.max(rows,d=>d.F)*1.15)]).range([ih,0]);
+  addYearAxis(g,x,p,false);
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${ih})`).call(d3.axisBottom(x).ticks(7));
+  g.append("g").attr("class","axis").call(d3.axisLeft(y).tickFormat(pct));
+  const ref=(v,lab,c)=>{g.append("line").attr("x1",0).attr("x2",iw).attr("y1",y(v)).attr("y2",y(v)).attr("stroke",c).attr("stroke-dasharray","3 3");g.append("text").attr("x",iw-4).attr("y",y(v)-4).attr("text-anchor","end").style("font","10.5px system-ui").attr("fill",c).text(lab)};
+  ref(1/16,"F = 1/16 · offspring of 1st cousins","#8c2f1b"); ref(1/64,"F = 1/64 · offspring of 2nd cousins","#6b6252");
+  g.append("path").attr("fill","none").attr("stroke","#1a1710").attr("stroke-width",2.5).attr("d",d3.line().x(d=>x(d.g)).y(d=>y(d.F))(rows));
+  g.append("text").attr("x",8).attr("y",14).style("font","700 11px system-ui").text("cumulative F_g (drift + consanguinity blend)");
+}
+function drawTree(p){
+  const depth=7, toyN=Math.max(10,Math.min(56,Math.round(18+44*(1-p.e*.55)) - (p.alpha*40)));
+  // build hierarchy: children = parents
+  function build(gen){ const id=Math.floor(rng()*toyN); const node={person:id,gen,children:null};
+    if(gen<depth){ node.children=[build(gen+1),build(gen+1)]; } return node; }
+  seed=seed; const root=build(0);
+  const counts=new Map(); (function walk(n){counts.set(n.person,(counts.get(n.person)||0)+1); (n.children||[]).forEach(walk)})(root);
+  const distinct=[...counts.keys()].length, total=Math.pow(2,depth+1)-1, leaves=Math.pow(2,depth);
+  const W=900,H=430, tree=d3.tree().size([W-30,H-70]);
+  const hier=d3.hierarchy(root); tree(hier);
+  const {svg,g}=baseChart("#chartTree",W,H,{t:34,r:15,b:15,l:15});
+  const palette=d3.scaleOrdinal(d3.schemeTableau10.concat(d3.schemeSet3));
+  const colour=id=>palette(id%22);
+  g.selectAll("path").data(hier.links()).join("path").attr("fill","none").attr("stroke","#c9b995").attr("d",d3.linkVertical().x(d=>d.x).y(d=>d.y));
+  const nodes=g.selectAll("g.n").data(hier.descendants()).join("g").attr("transform",d=>`translate(${d.x},${d.y})`);
+  nodes.append("rect").attr("x",-13).attr("y",-11).attr("width",26).attr("height",22).attr("rx",3).attr("fill",d=>colour(d.data.person)).attr("stroke","#1a1710").attr("stroke-width",d=>counts.get(d.data.person)>1?1.8:.6)
+    .on("mousemove",(ev,d)=>showTip(ev,`<b>Person #${d.data.person}</b> · occupies <b>${counts.get(d.data.person)} slot(s)</b><br>generation g=${d.data.gen}${counts.get(d.data.person)>1?"<br><b>Pedigree collapse:</b> this ancestor appears multiple times.":""}`)).on("mouseleave",hideTip);
+  nodes.append("text").attr("text-anchor","middle").attr("dy",4).style("font","700 9px system-ui").text(d=>d.data.person);
+  g.append("text").attr("x",0).attr("y",-16).style("font","700 11px system-ui").text(`Toy pool N_toy=${toyN} · depth ${depth} · same colour / number = same person`);
+  $("treeReadout").innerHTML=`In this draw the whole tree has <b>${total} slots</b> filled by only <b>${distinct} distinct people</b> (toy pool N<sub>toy</sub>=${toyN}). Duplicated ancestors: <b>${[...counts.values()].filter(v=>v>1).length}</b> people occupy more than one slot. At the leaf generation alone there are ${fmt(leaves)} slots. Re-run for a new pedigree.`;
+}
+
+// ---------- Update ----------
+function syncLabels(p){
+  $("o_gmax").textContent=p.G+" gen"; $("o_N0").textContent=fmt(p.N0); $("o_Nf").textContent=fmt(p.Nf); $("o_gb").textContent=p.gb+` (≈${Math.round(2026-p.gb*p.gt)})`; $("o_Nanc").textContent=fmt(p.Nanc);
+  $("o_e").textContent=pct(p.e); $("o_s").textContent=pct(p.s); $("o_alpha").textContent=pct(p.alpha); $("o_gt").textContent=p.gt+" yr"; $("seedOut").textContent=seed;
+  $("o_v0").textContent=p.v0.toFixed(2); $("o_vpast").textContent=p.vpast.toFixed(2);
+}
+function update(){
+  const p=readParams(), rows=compute(p), cmp=p.compare?compute(paramsFromPreset(p.compare)):null;
+  syncLabels(p);
+  const last=rows[rows.length-1];
+  const gstar=rows.find(r=>r.g>=1 && Math.pow(2,r.g)>=r.Ne);
+  $("stSlots").textContent=d3.format(".3s")(last.S); $("stDistinct").textContent=fmt(last.A);
+  $("stCollapse").textContent=pct(last.collapse); $("stSat").textContent=gstar?`g* ≈ ${gstar.g}`:"—";
+  $("headlineCallout").innerHTML=`At <b>g=${last.g}</b> (≈ year ${last.year}) the fallacy needs <b>${fmt(last.S)} different people</b>. This model gives <b>${fmt(last.A)} distinct ancestors</b> in that generation — a collapse of <b>${pct(last.collapse)}</b>, each distinct ancestor appearing on average <b>${fmt2(last.m)} times</b> in your Ahnentafel. Saturation begins near <b>g*=${gstar?gstar.g:"—"}</b>, where 2<sup>g*</sup> ≈ N<sub>e</sub> (= ${gstar?fmt(gstar.Ne):"—"}). Beyond that, adding generations adds <i>paths</i> to old ancestors, not new ancestors.`;
+  $("ncReadout").innerHTML=`Implied census N<sub>c</sub> = N<sub>e</sub>/v: today <b>${fmt(rows[0].Ncensus)}</b> head-count (entered N<sub>e</sub> pool, before endogamy shrinkage); at ${p.gb<=p.G?`the bottleneck generation (g=${p.gb})`:`the deepest generation shown (g=${p.G}; bottleneck is at g=${p.gb})`} <b>${fmt(rows[Math.min(p.gb,p.G)].Ncensus)}</b>. The dynamics don't change with v — v is the bridge to historical head-counts.`;
+  $("fReadout").innerHTML=`Cumulative <b>F<sub>${last.g}</sub> ≈ ${last.F.toFixed(4)}</b> under this trajectory. Benchmarks: offspring of second cousins F=1/64≈0.0156; first cousins F=1/16=0.0625. F here is a <i>population-average drift expectation</i> — an individual's realised F (e.g. from runs of homozygosity, ROH, in DNA) varies widely around it.`;
+  drawMain(rows,p,cmp); drawCollapse(rows,p); drawPop(rows,p); drawF(rows,p); drawTree(p); syncLabels(p);
+  let runSum=0;
+  $("tbl").querySelector("tbody").innerHTML=rows.filter(r=>r.g>=1).map(r=>{runSum+=r.A; return `<tr><td>${r.g}</td><td>${r.year}</td><td>${fmt(r.S)}</td><td>${fmt(r.Ne)}</td><td>${fmt(r.Ncensus)}</td><td>${r.v.toFixed(2)}</td><td><b>${fmt(r.A)}</b></td><td>${fmt(runSum)}</td><td>${pct(r.collapse)}</td><td>${fmt2(r.m)}×</td><td>${r.consF.toFixed(3)}</td><td>${r.F.toFixed(4)}</td></tr>`}).join("");
+  if(!update._mathDone){ update._mathDone=true; renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false}],throwOnError:false}); }
+}
+
+// presets UI
+const presetDiv=$("presets"), cmpSel=$("compare");
+Object.entries(PRESETS).forEach(([k,v])=>{ const b=document.createElement("button"); b.textContent=v.label; b.onclick=()=>{const pr=v; $("N0").value=pr.N0;$("Nf").value=pr.Nf;$("gb").value=pr.gb;$("Nanc").value=pr.Nanc;$("useBn").checked=pr.useBn;$("e").value=pr.e;$("s").value=pr.s;$("alpha").value=pr.alpha; document.querySelectorAll("#presets button").forEach(x=>x.classList.remove("on")); b.classList.add("on"); update();}; presetDiv.appendChild(b);
+  const o=document.createElement("option"); o.value=k; o.textContent=v.label; cmpSel.appendChild(o); });
+let _deb=null;
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",()=>{clearTimeout(_deb); _deb=setTimeout(update,90);}));
+$("reroll").onclick=()=>{seed=Math.floor(Math.random()*1e9)+1; update();};
+update();
+</script>
+</body>
+</html>
