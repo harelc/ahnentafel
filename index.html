@@ -162,6 +162,7 @@ footer{border-top:3px double var(--ink);padding:24px 6vw;font-size:13px;color:va
 
     <div class="panel" style="margin-top:22px">
       <h2>Generation-by-generation table</h2>
+      <p class="small"><b>Consanguinity factor</b> \((1-\alpha\bar d)^{g-1}\): fraction of distinct ancestors remaining after systematic cousin unions (slider \(\alpha\)) duplicate shared family subtrees — \(1.00\) = none removed, \(0.83\) = a further 17% removed — multiplied into the Distinct \(A_g\) column. Defined fully in the Glossary and §3b.</p>
       <div class="tblwrap"><table id="tbl"><thead><tr><th>\(g\)</th><th>≈ year</th><th>Slots \(S_g\)</th><th>\(N_e(g)\)</th><th>Implied \(N_c\)</th><th>\(v\)</th><th>Distinct \(A_g\)</th><th>\(\sum_{k\le g} A_k\)</th><th>Collapse \(C_g\)</th><th>\(m_g\)</th><th>Consanguinity factor</th><th>\(F_g\)</th></tr></thead><tbody></tbody></table></div>
     </div>
 
@@ -170,6 +171,8 @@ footer{border-top:3px double var(--ink);padding:24px 6vw;font-size:13px;color:va
         <li><b>Ahnentafel</b> — numbered ancestor table; slot numbers double each generation (Sosa–Stradonitz numbering).</li>
         <li><b>Pedigree collapse</b> — reduction in distinct ancestors because relatives reproduce; measured here by \(C_g\).</li>
         <li><b>Endogamy</b> — marrying within a defined group (religious, geographic, caste-like) over many generations.</li>
+        <li><b>Consanguinity</b> — mating between close relatives (literally "same blood"): siblings share \(F\)-relevant kinship most strongly, then uncle–niece, first cousins, second cousins…</li>
+        <li><b>Consanguinity factor</b> — this site's multiplier \((1-\alpha\bar d)^{\,g-1}\) applied to distinct ancestors \(A_g\): the fraction of distinct ancestors <i>remaining</i> after systematic cousin unions duplicate shared subtrees, on top of random collapse. \(1.00\) = no effect (\(\alpha=0\)); at the defaults (\(\alpha=5\%\)) it is \(0.83\) by \(g=20\), i.e. cousin unions alone removed a further 17% of the distinct ancestors. See §3b.</li>
         <li><b>Founder effect / bottleneck</b> — a population descends from few founders \(N_f\); drift and shared ancestry spike.</li>
         <li><b>\(N_e\) vs \(N_c\)</b> — effective vs census size. Unequal family sizes, sex ratio and variance cut \(N_e\) well below head-count.</li>
         <li><b>IBD — Identity by Descent</b>: two DNA segments are copies inherited from the <i>same segment in a common ancestor</i>, without recombination breaking them up in between. IBD is the gold-standard evidence of recent shared ancestry; its segment lengths (in centimorgans, cM) date the common ancestor, and the drift and coalescence mathematics in §2b/§4 is about how IBD accumulates in a small pool.</li>
@@ -285,7 +288,7 @@ function drawMain(rows,p,cmpRows){
   if(cmpRows){ g.append("path").attr("fill","none").attr("stroke","#8c2f1b").attr("stroke-width",2).attr("stroke-dasharray","6 4").attr("opacity",.55).attr("d",line("A",cmpRows)); }
   // interactive hover dots on A
   g.selectAll("circle.h").data(rows.filter(d=>d.g>=1)).join("circle").attr("cx",d=>x(d.g)).attr("cy",d=>y(d.A)).attr("r",5).attr("fill","transparent")
-   .on("mousemove",(ev,d)=>showTip(ev,`<b>g=${d.g}</b> (≈ ${d.year})<br>Slots 2<sup>g</sup> = ${fmt(d.S)}<br>Distinct A<sub>g</sub> = <b>${fmt(d.A)}</b><br>Collapse = ${pct(d.collapse)} · m<sub>g</sub> = ${fmt2(d.m)}×<br>N<sub>e</sub>(g) = ${fmt(d.Ne)} · consanguinity factor = ${d.consF.toFixed(3)}`)).on("mouseleave",hideTip);
+   .on("mousemove",(ev,d)=>showTip(ev,`<b>g=${d.g}</b> (≈ ${d.year})<br>Slots 2<sup>g</sup> = ${fmt(d.S)}<br>Distinct A<sub>g</sub> = <b>${fmt(d.A)}</b><br>Collapse = ${pct(d.collapse)} · m<sub>g</sub> = ${fmt2(d.m)}×<br>N<sub>e</sub>(g) = ${fmt(d.Ne)} · consanguinity factor = ${d.consF.toFixed(3)} (×A<sub>g</sub>; 1 = cousin unions remove no further ancestors)`)).on("mouseleave",hideTip);
   const leg=[["#1a1710","Slots 2^g"],["#8c2f1b","Distinct A_g"],...(cmpRows?[["#8c2f1b","Comparison A_g (dashed)"]]:[])];
   const lg=g.append("g").attr("transform",`translate(14,6)`); leg.forEach((d,i)=>{const r=lg.append("g").attr("transform",`translate(0,${i*17})`);r.append("line").attr("x2",22).attr("stroke",d[0]).attr("stroke-width",3).attr("stroke-dasharray",i===leg.length-1&&cmpRows?"5 3":null);r.append("text").attr("x",28).attr("y",4).attr("class","legend").text(d[1]);});
 }
